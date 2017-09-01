@@ -1,0 +1,21 @@
+session_name: tinycloud
+windows:
+- window_name: tinycloud
+  layout: main-vertical
+  panes:
+    - shell_command:
+      - export VAULT_ADDR=http://127.0.0.1:8200
+      - export VAULT_TOKEN=tinycloud
+      - echo "Wait for tinycloud to reach stable state"
+      - sleep 10
+      - vault write secret/db/prod/job password=asdasdasd role=job  ttl=10m
+      - vault policy-write job job_policy.hcl
+      - rm /tmp/tinycloud_vault_audit.log
+      - vault audit-enable file file_path=/tmp/tinycloud_vault_audit.log
+    - consul agent -dev
+    - vault server -dev -dev-root-token-id=tinycloud
+
+    - shell_command:
+        - rm -rf /tmp/tinycloud-nomad
+        - nomad agent -config nomad.config
+    - watch -d -n 1 ls -al /tmp/tinycloud_vault_audit.log
